@@ -38,12 +38,12 @@ export class ResponseInterceptor<T> implements NestInterceptor<
           typeof result === 'object' &&
           'data' in (result as RawHandlerResult);
 
-        const data = isEnvelopeShaped
-          ? (result as RawHandlerResult).data
-          : result;
-        const pagination = isEnvelopeShaped
-          ? (result as RawHandlerResult).pagination
-          : undefined;
+        // Any key besides `data` on an envelope-shaped result (e.g.
+        // `pagination`, or a one-off `warning` per Section 3.3's past-date
+        // edge case) is passed through into `meta` as-is.
+        const { data, ...extraMeta } = isEnvelopeShaped
+          ? (result as RawHandlerResult)
+          : { data: result };
 
         return {
           success: true,
@@ -52,7 +52,7 @@ export class ResponseInterceptor<T> implements NestInterceptor<
             timestamp: new Date().toISOString(),
             requestId:
               (request as unknown as { requestId?: string }).requestId ?? '',
-            ...(pagination ? { pagination } : {}),
+            ...extraMeta,
           },
         };
       }),

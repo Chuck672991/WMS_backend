@@ -5,36 +5,58 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ErrorCode } from '../constants/error-codes.constant';
+import { WeddingRole } from '../constants/roles.constant';
+import { PrismaService } from '../../database/prisma.service';
+import type { CurrentUserPayload } from '../decorators/current-user.decorator';
+
+interface RequestWithWeddingContext {
+  params: Record<string, string>;
+  user: CurrentUserPayload;
+  weddingRole?: WeddingRole;
+}
 
 /**
- * Skeleton only — implemented fully in Module 03 (Users & Wedding Workspace).
+ * Verifies the authenticated user (`request.user`, set by JwtAuthGuard) is a
+ * member of the `:weddingId` route param, then attaches the user's role for
+ * that wedding to `request.weddingRole` so RolesGuard can authorize further
+ * down the chain (Section 5.7 — the single most important guard in the system).
  *
- * Responsibility (per Section 5.7 of the backend documentation): verify the
- * authenticated user (`request.user`, set by JwtAuthGuard) is a member of the
- * `:weddingId` route param, then attach the user's role for that wedding to
- * `request.weddingRole` so RolesGuard can authorize further down the chain.
- *
- * Must return 404 NOT_FOUND (never 403) when the wedding doesn't exist or the
- * user isn't a member, to avoid leaking wedding existence to non-members.
+ * Returns 404 NOT_FOUND (never 403) whether the wedding doesn't exist, is
+ * soft-deleted, or the user simply isn't a member — never leaking which case
+ * it is (Section 3.4).
  */
 @Injectable()
 export class WeddingAccessGuard implements CanActivate {
-  canActivate(context: ExecutionContext): boolean {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context
       .switchToHttp()
-      .getRequest<{ params: Record<string, string> }>();
+      .getRequest<RequestWithWeddingContext>();
     const weddingId = request.params?.weddingId;
 
+    const notFound = new NotFoundException({
+      code: ErrorCode.NOT_FOUND,
+      message: 'Wedding not found.',
+    });
+
     if (!weddingId) {
-      throw new NotFoundException({
-        code: ErrorCode.NOT_FOUND,
-        message: 'Wedding not found.',
-      });
+      throw notFound;
     }
 
-    // TODO (Module 03): query WeddingMember by (weddingId, request.user.id),
-    // throw 404 NOT_FOUND if no membership row exists, else set
-    // request.weddingRole = membership.role and return true.
+    const membership = await this.prisma.weddingMember.findFirst({
+      where: {
+        weddingId,
+        userId: request.user.id,
+        wedding: { deletedAt: null },
+      },
+    });
+
+    if (!membership) {
+      throw notFound;
+    }
+
+    request.weddingRole = membership.role;
     return true;
   }
 }

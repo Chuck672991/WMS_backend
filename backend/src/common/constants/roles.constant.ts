@@ -1,8 +1,5 @@
-export enum WeddingRole {
-  OWNER = 'OWNER',
-  CO_OWNER = 'CO_OWNER',
-  FAMILY_MEMBER = 'FAMILY_MEMBER',
-  VIEWER = 'VIEWER',
-}
+import { WeddingRole } from '@prisma/client';
+
+export { WeddingRole };
 
 export const ALL_WEDDING_ROLES = Object.values(WeddingRole);

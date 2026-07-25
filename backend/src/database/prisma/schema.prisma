@@ -1,5 +1,5 @@
 // Full DB schema (all models) — populated module-by-module starting with
-// Module 02 (Authentication). Intentionally empty at scaffold time.
+// Module 02 (Authentication).
 
 generator client {
   provider = "prisma-client-js"
@@ -8,4 +8,137 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Module 02: Authentication & Authorization
+// ---------------------------------------------------------------------------
+
+model User {
+  id                String       @id @default(uuid())
+  email             String       @unique
+  passwordHash      String? // null if Google-only account
+  fullName          String
+  phone             String?
+  profileImageUrl   String?
+  googleId          String?      @unique
+  authProvider      AuthProvider @default(EMAIL)
+  isEmailVerified   Boolean      @default(false)
+  isActive          Boolean      @default(true)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  deletedAt         DateTime? // soft delete
+
+  refreshTokens      RefreshToken[]
+  passwordResets     PasswordReset[]
+  weddingMemberships WeddingMember[]
+
+  @@index([email])
+  @@map("users")
+}
+
+enum AuthProvider {
+  EMAIL
+  GOOGLE
+}
+
+model RefreshToken {
+  id         String    @id @default(uuid())
+  userId     String
+  tokenHash  String // bcrypt hash of the actual refresh token
+  deviceInfo String? // user-agent / device label
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model PasswordReset {
+  id        String    @id @default(uuid())
+  userId    String
+  tokenHash String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_resets")
+}
+
+// ---------------------------------------------------------------------------
+// Module 03: Users & Wedding Workspace
+// ---------------------------------------------------------------------------
+
+model Wedding {
+  id              String    @id @default(uuid())
+  name            String
+  weddingDate     DateTime?
+  venueCity       String?
+  estimatedGuests Int?
+  totalBudget     Decimal?  @db.Decimal(12, 2)
+  coverImageUrl   String?
+  createdBy       String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
+
+  members WeddingMember[]
+  invites WeddingInvite[]
+  // vendors, guests, budgetItems, events, tasks relations are added in
+  // Modules 04-07 once those models exist.
+
+  @@map("weddings")
+}
+
+model WeddingMember {
+  id        String      @id @default(uuid())
+  weddingId String
+  userId    String
+  role      WeddingRole @default(FAMILY_MEMBER)
+  joinedAt  DateTime    @default(now())
+
+  wedding Wedding @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([weddingId, userId])
+  @@index([userId])
+  @@map("wedding_members")
+}
+
+enum WeddingRole {
+  OWNER
+  CO_OWNER
+  FAMILY_MEMBER
+  VIEWER
+}
+
+model WeddingInvite {
+  id        String       @id @default(uuid())
+  weddingId String
+  email     String
+  role      WeddingRole  @default(FAMILY_MEMBER)
+  invitedBy String
+  status    InviteStatus @default(PENDING)
+  tokenHash String
+  expiresAt DateTime
+  createdAt DateTime     @default(now())
+
+  wedding Wedding @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+
+  @@index([weddingId])
+  @@index([email])
+  @@map("wedding_invites")
+}
+
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  REVOKED
 }
