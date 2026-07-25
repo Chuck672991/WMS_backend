@@ -9,4 +9,7 @@ export enum ErrorCode {
   RATE_LIMITED = 'RATE_LIMITED',
   INTERNAL_ERROR = 'INTERNAL_ERROR',
   WEDDING_ACCESS_DENIED = 'WEDDING_ACCESS_DENIED',
+  // Module 06, Section 6.6: budget items auto-created from a vendor payment
+  // can only be edited/deleted via the Vendor module.
+  LINKED_TO_VENDOR_PAYMENT = 'LINKED_TO_VENDOR_PAYMENT',
 }

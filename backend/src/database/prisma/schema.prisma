@@ -88,10 +88,13 @@ model Wedding {
   updatedAt       DateTime  @updatedAt
   deletedAt       DateTime?
 
-  members WeddingMember[]
-  invites WeddingInvite[]
-  // vendors, guests, budgetItems, events, tasks relations are added in
-  // Modules 04-07 once those models exist.
+  members     WeddingMember[]
+  invites     WeddingInvite[]
+  vendors     Vendor[]
+  guests      Guest[]
+  budgetItems BudgetItem[]
+  events      Event[]
+  tasks       Task[]
 
   @@map("weddings")
 }
@@ -141,4 +144,259 @@ enum InviteStatus {
   ACCEPTED
   EXPIRED
   REVOKED
+}
+
+// ---------------------------------------------------------------------------
+// Module 04: Vendor Management
+// ---------------------------------------------------------------------------
+
+model Vendor {
+  id             String         @id @default(uuid())
+  weddingId      String
+  name           String
+  category       VendorCategory
+  customCategory String? // used when category = OTHER
+  contactName    String?
+  phone          String?
+  email          String?
+  totalPrice     Decimal?       @db.Decimal(12, 2)
+  notes          String?
+  imageUrl       String?
+  eventId        String? // optional link to a specific function
+  createdBy      String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  wedding     Wedding         @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  event       Event?          @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  payments    VendorPayment[]
+  budgetItems BudgetItem[]
+
+  @@index([weddingId])
+  @@index([weddingId, category])
+  @@map("vendors")
+}
+
+enum VendorCategory {
+  CATERING
+  PHOTOGRAPHY
+  DECORATION
+  SALON
+  TRANSPORT
+  BAND_DJ
+  VENUE
+  DRESS_DESIGNER
+  JEWELLERY
+  INVITATION_CARDS
+  OTHER
+}
+
+model VendorPayment {
+  id          String        @id @default(uuid())
+  vendorId    String
+  amount      Decimal       @db.Decimal(12, 2)
+  paymentDate DateTime      @default(now())
+  method      PaymentMethod @default(CASH)
+  note        String?
+  recordedBy  String
+  createdAt   DateTime      @default(now())
+
+  vendor Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@index([vendorId])
+  @@map("vendor_payments")
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  CARD
+  OTHER
+}
+
+// ---------------------------------------------------------------------------
+// Module 05: Guest & RSVP Management
+// ---------------------------------------------------------------------------
+
+model Guest {
+  id        String @id @default(uuid())
+  weddingId String
+  name      String // primary contact / group name, e.g. "Khan Family"
+  groupSize Int    @default(1)
+  // Recommended addition (Section 5.11 design note): tracks actual RSVP'd
+  // attendance separately from groupSize so the original invite size is
+  // never silently overwritten/lost.
+  confirmedCount Int?
+  phone          String?
+  email          String?
+  side           GuestSide     @default(BOTH)
+  gathering      GatheringType @default(MIXED)
+  rsvpStatus     RsvpStatus    @default(PENDING)
+  rsvpToken      String        @unique @default(uuid()) // public RSVP link
+  tableNumber    String?
+  notes          String?
+  lastInvitedAt  DateTime? // powers the 24h resend-rate-limit in 5.8
+  createdBy      String
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  deletedAt      DateTime?
+
+  wedding      Wedding            @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  eventInvites GuestEventInvite[]
+
+  @@index([weddingId])
+  @@index([weddingId, rsvpStatus])
+  @@map("guests")
+}
+
+enum GuestSide {
+  BRIDE
+  GROOM
+  BOTH
+}
+
+enum GatheringType {
+  MARDANA
+  ZANANA
+  MIXED
+}
+
+enum RsvpStatus {
+  PENDING
+  CONFIRMED
+  DECLINED
+}
+
+model GuestEventInvite {
+  id        String   @id @default(uuid())
+  guestId   String
+  eventId   String
+  createdAt DateTime @default(now())
+
+  guest Guest @relation(fields: [guestId], references: [id], onDelete: Cascade)
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([guestId, eventId])
+  @@map("guest_event_invites")
+}
+
+// ---------------------------------------------------------------------------
+// Module 06: Budget Management
+// ---------------------------------------------------------------------------
+
+model BudgetItem {
+  id             String         @id @default(uuid())
+  weddingId      String
+  category       BudgetCategory
+  customCategory String? // used when category = OTHER
+  title          String
+  amount         Decimal        @db.Decimal(12, 2)
+  expenseDate    DateTime       @default(now())
+  vendorId       String? // optional link, auto-set when synced from a vendor payment
+  // Not in the doc's literal schema, but required to fulfil its own
+  // documented behavior ("deleting VendorPayment cascades the linked
+  // BudgetItem deletion", Section 6.6 edge case): identifies exactly which
+  // BudgetItem was auto-created from which VendorPayment.
+  vendorPaymentId String?       @unique
+  paymentMethod   PaymentMethod @default(CASH)
+  notes           String?
+  recordedBy      String
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  deletedAt       DateTime?
+
+  wedding Wedding @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  vendor  Vendor? @relation(fields: [vendorId], references: [id], onDelete: SetNull)
+
+  @@index([weddingId])
+  @@index([weddingId, category])
+  @@map("budget_items")
+}
+
+enum BudgetCategory {
+  CATERING
+  DECORATION
+  DRESSES
+  JEWELLERY
+  PHOTOGRAPHY
+  VENUE
+  TRANSPORT
+  INVITATION_CARDS
+  SALON_MAKEUP
+  GIFTS
+  MISCELLANEOUS
+  OTHER
+}
+
+// ---------------------------------------------------------------------------
+// Module 07: Event Timeline & Tasks
+// ---------------------------------------------------------------------------
+
+model Event {
+  id           String       @id @default(uuid())
+  weddingId    String
+  name         String // e.g. "Mehndi", "Baraat" — free text, not a fixed enum
+  eventDate    DateTime
+  startTime    String? // stored as "HH:mm"
+  venueName    String?
+  venueAddress String?
+  notes        String?
+  manualStatus EventStatus? // null = auto-derive from date; set = override
+  createdBy    String
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  deletedAt    DateTime?
+
+  wedding      Wedding            @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  vendors      Vendor[]
+  guestInvites GuestEventInvite[]
+  tasks        Task[]
+
+  @@index([weddingId])
+  @@index([weddingId, eventDate])
+  @@map("events")
+}
+
+enum EventStatus {
+  UPCOMING
+  DONE
+  CANCELLED
+  POSTPONED
+}
+
+model Task {
+  id          String       @id @default(uuid())
+  weddingId   String
+  eventId     String?
+  title       String
+  description String?
+  assignedTo  String? // userId
+  dueDate     DateTime?
+  status      TaskStatus   @default(PENDING)
+  priority    TaskPriority @default(MEDIUM)
+  createdBy   String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  deletedAt   DateTime?
+
+  wedding Wedding @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  event   Event?  @relation(fields: [eventId], references: [id], onDelete: SetNull)
+
+  @@index([weddingId])
+  @@index([weddingId, status])
+  @@index([assignedTo])
+  @@map("tasks")
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  DONE
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
 }

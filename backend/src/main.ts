@@ -15,6 +15,12 @@ async function bootstrap() {
   const apiPrefix = config.get<string>('app.apiPrefix') ?? 'v1';
   app.setGlobalPrefix(apiPrefix);
 
+  const corsOrigin = process.env.CORS_ORIGIN;
+  app.enableCors({
+    origin: corsOrigin ? corsOrigin.split(',').map((o) => o.trim()) : true,
+    credentials: true,
+  });
+
   const requestIdMiddleware = new RequestIdMiddleware();
   app.use(requestIdMiddleware.use.bind(requestIdMiddleware));
 

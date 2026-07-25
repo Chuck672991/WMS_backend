@@ -9,7 +9,12 @@ import jwtConfig from './config/jwt.config';
 import s3Config from './config/s3.config';
 import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { BudgetModule } from './modules/budget/budget.module';
+import { EventsModule } from './modules/events/events.module';
+import { GuestsModule } from './modules/guests/guests.module';
+import { TasksModule } from './modules/tasks/tasks.module';
 import { UsersModule } from './modules/users/users.module';
+import { VendorsModule } from './modules/vendors/vendors.module';
 import { WeddingsModule } from './modules/weddings/weddings.module';
 
 @Module({
@@ -28,7 +33,12 @@ import { WeddingsModule } from './modules/weddings/weddings.module';
     AuthModule,
     UsersModule,
     WeddingsModule,
-    // Further feature modules (Module 04 onward) are registered here as they're built.
+    VendorsModule,
+    GuestsModule,
+    BudgetModule,
+    EventsModule,
+    TasksModule,
+    // Further feature modules (Module 08 onward) are registered here as they're built.
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
