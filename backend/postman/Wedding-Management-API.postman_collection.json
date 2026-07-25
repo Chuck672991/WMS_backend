@@ -1,0 +1,2031 @@
+{
+  "info": {
+    "name": "Smart Wedding Management API",
+    "description": "Full API surface for the Smart Wedding Management backend (NestJS + Prisma). Run \"1. Auth > Register\" (or \"Login\") first — it auto-saves accessToken/refreshToken. Then run \"3. Weddings > Create Wedding\" to auto-save weddingId. Everything else chains off those two collection variables.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/v1",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "weddingId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "memberUserId",
+      "value": "",
+      "type": "string",
+      "description": "Set manually to a second user's id for member-management requests."
+    },
+    {
+      "key": "inviteId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "vendorId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "paymentId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "guestId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "rsvpToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "budgetItemId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "eventId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "taskId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Ayesha Khan\",\n  \"email\": \"ayesha@example.com\",\n  \"password\": \"SecurePass123!\",\n  \"phone\": \"+923001234567\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Creates a new account. Change the email if you get a 409 DUPLICATE_RESOURCE (email already registered).",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let jsonData = {};",
+                  "try { jsonData = pm.response.json(); } catch (e) { /* non-JSON response, skip */ }",
+                  "if (jsonData.data && jsonData.data.accessToken) {",
+                  "    pm.collectionVariables.set('accessToken', jsonData.data.accessToken);",
+                  "    pm.collectionVariables.set('refreshToken', jsonData.data.refreshToken);",
+                  "    pm.collectionVariables.set('userId', jsonData.data.user.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"ayesha@example.com\",\n  \"password\": \"SecurePass123!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let jsonData = {};",
+                  "try { jsonData = pm.response.json(); } catch (e) { /* non-JSON response, skip */ }",
+                  "if (jsonData.data && jsonData.data.accessToken) {",
+                  "    pm.collectionVariables.set('accessToken', jsonData.data.accessToken);",
+                  "    pm.collectionVariables.set('refreshToken', jsonData.data.refreshToken);",
+                  "    pm.collectionVariables.set('userId', jsonData.data.user.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Google Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/google",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "google"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idToken\": \"google-id-token-from-mobile-sdk\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Requires a real Google ID token from the mobile SDK / OAuth playground — cannot be exercised with a fake value.",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/forgot-password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "forgot-password"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"ayesha@example.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Always returns 200. Check the backend server console log for the reset link/token (email sending is not wired up yet).",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/reset-password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "reset-password"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"ayesha@example.com\",\n  \"token\": \"<plain-token-from-server-console-log>\",\n  \"newPassword\": \"NewSecurePass123!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "refresh"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Refresh tokens are single-use and rotated — running this again with the OLD token will revoke ALL sessions (theft-detection). Always use the token this test script just saved.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let jsonData = {};",
+                  "try { jsonData = pm.response.json(); } catch (e) { /* non-JSON response, skip */ }",
+                  "if (jsonData.data && jsonData.data.accessToken) {",
+                  "    pm.collectionVariables.set('accessToken', jsonData.data.accessToken);",
+                  "    pm.collectionVariables.set('refreshToken', jsonData.data.refreshToken);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Logout All Devices",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout-all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout-all"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Active Sessions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/sessions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "sessions"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Users",
+      "item": [
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update My Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Ayesha B. Khan\",\n  \"phone\": \"+923001234567\",\n  \"profileImageUrl\": \"https://cdn.smartwedding.app/profile/uuid.jpg\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Weddings",
+      "item": [
+        {
+          "name": "Create Wedding",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/weddings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "weddings"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Ayesha & Bilal's Wedding\",\n  \"weddingDate\": \"2026-11-29\",\n  \"venueCity\": \"Lahore\",\n  \"estimatedGuests\": 300,\n  \"totalBudget\": 3200000\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Creator automatically becomes OWNER. Saves weddingId for every other request below."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let jsonData = {};",
+                  "try { jsonData = pm.response.json(); } catch (e) { /* non-JSON response, skip */ }",
+                  "if (jsonData.data && jsonData.data.id) {",
+                  "    pm.collectionVariables.set('weddingId', jsonData.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Wedding Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/weddings/{{weddingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "weddings",
+                "{{weddingId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Wedding Settings",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/weddings/{{weddingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "weddings",
+                "{{weddingId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Ayesha & Bilal's Grand Wedding\",\n  \"venueCity\": \"Karachi\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Roles: OWNER, CO_OWNER"
+          }
+        },
+        {
+          "name": "List Wedding Members",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/weddings/{{weddingId}}/members",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "weddings",
+                "{{weddingId}}",
+                "members"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Invite Member",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/weddings/{{weddingId}}/invites",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "weddings",
+                "{{weddingId}}",
+                "invites"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"family@example.com\",\n  \"role\": \"FAMILY_MEMBER\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Roles: OWNER, CO_OWNER. role must be CO_OWNER, FAMILY_MEMBER or VIEWER (not OWNER)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let jsonData = {};",
+                  "try { jsonData = pm.response.json(); } catch (e) { /* non-JSON response, skip */ }",
+                  "if (jsonData.data && jsonData.data.id) {",
+                  "    pm.collectionVariables.set('inviteId', jsonData.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Revoke Invite",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/weddings/{{weddingId}}/invites/{{inviteId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "weddings",
+                "{{weddingId}}",
+                "invites",
+                "{{inviteId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Accept Invite",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/invites/accept",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "invites",
+                "accept"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"<plain-invite-token-from-email>\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Call this while logged in AS THE INVITED USER (their email must match the invite). Log in as the second account first, then run this."
+          }
+        },
+        {
+          "name": "Update Member Role",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/weddings/{{weddingId}}/members/{{memberUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "weddings",
+                "{{weddingId}}",
+                "members",
+                "{{memberUserId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"CO_OWNER\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Roles: OWNER only. Set collection variable memberUserId to the target member's userId first."
+          }
+        },
+        {
+          "name": "Remove Member",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/weddings/{{weddingId}}/members/{{memberUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "weddings",
+                "{{weddingId}}",
+                "members",
+                "{{memberUserId}}"
+              ]
+            },
+            "description": "Roles: OWNER, CO_OWNER (co-owner cannot remove the owner)."
+          }
+        },
+        {
+          "name": "Delete Wedding",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/weddings/{{weddingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "weddings",
+                "{{weddingId}}"
+              ]
+            },
+            "description": "Roles: OWNER only. Soft delete. Run this LAST since it invalidates weddingId for every other folder."
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Vendors",
+      "item": [
+        {
+          "name": "List Vendors",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/weddings/{{weddingId}}/vendors?page=1&limit=20&sortBy=createdAt&sortOrder=desc&search=caterer&category=CATERING&status=ADVANCE&eventId={{eventId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "weddings",
+                "{{weddingId}}",
+                "vendors"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": true
+                },
+                {
+                  "key": "sortBy",
+                  "value": "createdAt",
+                  "disabled": true
+                },
+                {
+                  "key": "sortOrder",
+                  "value": "desc",
+                  "disabled": true
+                },
+                {
+                  "key": "search",
+                  "value": "caterer",
+                  "disabled": true
+                },
+                {
+                  "key": "category",
+                  "value": "CATERING",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "ADVANCE",
+                  "disabled": true
+                },
+                {
+                  "key": "eventId",
+                  "value": "{{eventId}}",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Vendor Detail",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/weddings/{{weddingId}}/vendors/{{vendorId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "weddings",
+                "{{weddingId}}",
+                "vendors",
+                "{{vendorId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Vendor",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/weddings/{{weddingId}}/vendors",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "weddings",
+                "{{weddingId}}",
+                "vendors"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Al-Madina Caterers\",\n  \"category\": \"CATERING\",\n  \"contactName\": \"Imran Sahab\",\n  \"phone\": \"+923001112233\",\n  \"email\": \"info@almadina.com\",\n  \"totalPrice\": 950000,\n  \"notes\": \"312 heads, buffet style\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Roles: OWNER, CO_OWNER. If category is OTHER, customCategory becomes required."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let jsonData = {};",
+                  "try { jsonData = pm.response.json(); } catch (e) { /* non-JSON response, skip */ }",
+                  "if (jsonData.data && jsonData.data.id) {",
+                  "    pm.collectionVariables.set('vendorId', jsonData.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Vendor (category = OTHER)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/weddings/{{weddingId}}/vendors",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "weddings",
+                "{{weddingId}}",
+                "vendors"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Misc Rentals Co\",\n  \"category\": \"OTHER\",\n  \"customCategory\": \"Tent & Chairs\",\n  \"totalPrice\": 120000\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Demonstrates the customCategory requirement when category = OTHER."
+          }
+        },
+        {
+          "name": "Update Vendor",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/weddings/{{weddingId}}/vendors/{{vendorId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "weddings",
+                "{{weddingId}}",
+                "vendors",
+                "{{vendorId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"totalPrice\": 1000000,\n  \"notes\": \"Price renegotiated\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Record Vendor Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/weddings/{{weddingId}}/vendors/{{vendorId}}/payments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "weddings",
+                "{{weddingId}}",
+                "vendors",
+                "{{vendorId}}",
+                "payments"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 500000,\n  \"paymentDate\": \"2026-07-01\",\n  \"method\": \"BANK_TRANSFER\",\n  \"note\": \"50% advance\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Vendor status (PENDING/ADVANCE/PAID) is recalculated automatically — check meta.vendorSummary in the response."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let jsonData = {};",
+                  "try { jsonData = pm.response.json(); } catch (e) { /* non-JSON response, skip */ }",
+                  "if (jsonData.data && jsonData.data.id) {",
+                  "    pm.collectionVariables.set('paymentId', jsonData.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete Vendor Payment",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/weddings/{{weddingId}}/vendors/{{vendorId}}/payments/{{paymentId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "weddings",
+                "{{weddingId}}",
+                "vendors",
+                "{{vendorId}}",
+                "payments",
+                "{{paymentId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Vendor",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/weddings/{{weddingId}}/vendors/{{vendorId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "weddings",
+                "{{weddingId}}",
+                "vendors",
+                "{{vendorId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4b. Vendor Categories (reference)",
+      "item": [
+        {
+          "name": "List Vendor Categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/vendors/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vendors",
+                "categories"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Guests",
+      "item": [
+        {
+          "name": "List Guests",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/weddings/{{weddingId}}/guests?page=1&limit=20&sortBy=createdAt&sortOrder=desc&search=ali&rsvpStatus=CONFIRMED&side=BOTH&gathering=MIXED&eventId={{eventId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "weddings",
+                "{{weddingId}}",
+                "guests"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": true
+                },
+                {
+                  "key": "sortBy",
+                  "value": "createdAt",
+                  "disabled": true
+                },
+                {
+                  "key": "sortOrder",
+                  "value": "desc",
+                  "disabled": true
+                },
+                {
+                  "key": "search",
+                  "value": "ali",
+                  "disabled": true
+                },
+                {
+                  "key": "rsvpStatus",
+                  "value": "CONFIRMED",
+                  "disabled": true
+                },
+                {
+                  "key": "side",
+                  "value": "BOTH",
+                  "disabled": true
+                },
+                {
+                  "key": "gathering",
+                  "value": "MIXED",
+                  "disabled": true
+                },
+                {
+                  "key": "eventId",
+                  "value": "{{eventId}}",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Guest Summary Counts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/weddings/{{weddingId}}/guests/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "weddings",
+                "{{weddingId}}",
+                "guests",
+                "summary"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Guest",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/weddings/{{weddingId}}/guests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "weddings",
+                "{{weddingId}}",
+                "guests"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Khan Family\",\n  \"groupSize\": 6,\n  \"phone\": \"+923001234567\",\n  \"email\": \"khanfamily@example.com\",\n  \"side\": \"GROOM\",\n  \"gathering\": \"MARDANA\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Roles: OWNER, CO_OWNER, FAMILY_MEMBER. eventIds is optional — omit it to invite this guest to all events."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let jsonData = {};",
+                  "try { jsonData = pm.response.json(); } catch (e) { /* non-JSON response, skip */ }",
+                  "if (jsonData.data && jsonData.data.id) {",
+                  "    pm.collectionVariables.set('guestId', jsonData.data.id);",
+                  "}",
+                  "if (jsonData.data && jsonData.data.rsvpToken) {",
+                  "    pm.collectionVariables.set('rsvpToken', jsonData.data.rsvpToken);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Bulk Import Guests (CSV/XLSX)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/weddings/{{weddingId}}/guests/bulk-import",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "weddings",
+                "{{weddingId}}",
+                "guests",
+                "bulk-import"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "description": "Attach a CSV/XLSX file (max 5MB) with columns: name, groupSize, phone, side, gathering. Set the file in the Body tab."
+          }
+        },
+        {
+          "name": "Bulk Send Invites",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/weddings/{{weddingId}}/guests/bulk-send-invites",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "weddings",
+                "{{weddingId}}",
+                "guests",
+                "bulk-send-invites"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"guestIds\": [\n    \"{{guestId}}\"\n  ],\n  \"channel\": \"WHATSAPP\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Roles: OWNER, CO_OWNER only."
+          }
+        },
+        {
+          "name": "Update Guest",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/weddings/{{weddingId}}/guests/{{guestId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "weddings",
+                "{{weddingId}}",
+                "guests",
+                "{{guestId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tableNumber\": \"3\",\n  \"notes\": \"Prefers vegetarian meal\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Manually Set RSVP Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/weddings/{{weddingId}}/guests/{{guestId}}/rsvp",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "weddings",
+                "{{weddingId}}",
+                "guests",
+                "{{guestId}}",
+                "rsvp"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rsvpStatus\": \"CONFIRMED\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Send Digital Invite",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/weddings/{{weddingId}}/guests/{{guestId}}/send-invite",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "weddings",
+                "{{weddingId}}",
+                "guests",
+                "{{guestId}}",
+                "send-invite"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"channel\": \"WHATSAPP\",\n  \"force\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Rate-limited to 1 per guest per 24h unless force:true."
+          }
+        },
+        {
+          "name": "Delete Guest",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/weddings/{{weddingId}}/guests/{{guestId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "weddings",
+                "{{weddingId}}",
+                "guests",
+                "{{guestId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5b. Public RSVP (no auth)",
+      "item": [
+        {
+          "name": "Get Guest by RSVP Token",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/public/rsvp/{{rsvpToken}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "public",
+                "rsvp",
+                "{{rsvpToken}}"
+              ]
+            },
+            "description": "Simulates the guest opening their personal RSVP link — no login required.",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Submit RSVP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/public/rsvp/{{rsvpToken}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "public",
+                "rsvp",
+                "{{rsvpToken}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"response\": \"CONFIRMED\",\n  \"attendingCount\": 5,\n  \"message\": \"Excited to be there!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Budget",
+      "item": [
+        {
+          "name": "Get Budget Summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/weddings/{{weddingId}}/budget/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "weddings",
+                "{{weddingId}}",
+                "budget",
+                "summary"
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Budget Items",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/weddings/{{weddingId}}/budget/items?page=1&limit=20&sortBy=expenseDate&sortOrder=desc&category=CATERING&search=car&dateFrom=2026-01-01&dateTo=2026-12-31&vendorId={{vendorId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "weddings",
+                "{{weddingId}}",
+                "budget",
+                "items"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": true
+                },
+                {
+                  "key": "sortBy",
+                  "value": "expenseDate",
+                  "disabled": true
+                },
+                {
+                  "key": "sortOrder",
+                  "value": "desc",
+                  "disabled": true
+                },
+                {
+                  "key": "category",
+                  "value": "CATERING",
+                  "disabled": true
+                },
+                {
+                  "key": "search",
+                  "value": "car",
+                  "disabled": true
+                },
+                {
+                  "key": "dateFrom",
+                  "value": "2026-01-01",
+                  "disabled": true
+                },
+                {
+                  "key": "dateTo",
+                  "value": "2026-12-31",
+                  "disabled": true
+                },
+                {
+                  "key": "vendorId",
+                  "value": "{{vendorId}}",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Budget Item Detail",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/weddings/{{weddingId}}/budget/items/{{budgetItemId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "weddings",
+                "{{weddingId}}",
+                "budget",
+                "items",
+                "{{budgetItemId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Budget Item",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/weddings/{{weddingId}}/budget/items",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "weddings",
+                "{{weddingId}}",
+                "budget",
+                "items"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"TRANSPORT\",\n  \"title\": \"Baraat car decoration + fuel\",\n  \"amount\": 35000,\n  \"expenseDate\": \"2026-07-15\",\n  \"paymentMethod\": \"CASH\",\n  \"notes\": \"Paid to driver directly\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Roles: OWNER, CO_OWNER. If category is OTHER, customCategory becomes required."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let jsonData = {};",
+                  "try { jsonData = pm.response.json(); } catch (e) { /* non-JSON response, skip */ }",
+                  "if (jsonData.data && jsonData.data.id) {",
+                  "    pm.collectionVariables.set('budgetItemId', jsonData.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Budget Item",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/weddings/{{weddingId}}/budget/items/{{budgetItemId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "weddings",
+                "{{weddingId}}",
+                "budget",
+                "items",
+                "{{budgetItemId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 40000,\n  \"notes\": \"Updated after final invoice\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete Budget Item",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/weddings/{{weddingId}}/budget/items/{{budgetItemId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "weddings",
+                "{{weddingId}}",
+                "budget",
+                "items",
+                "{{budgetItemId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6b. Budget Categories (reference)",
+      "item": [
+        {
+          "name": "List Budget Categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/budget/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "budget",
+                "categories"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Events",
+      "item": [
+        {
+          "name": "List Events",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/weddings/{{weddingId}}/events?page=1&limit=50&sortBy=eventDate&sortOrder=asc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "weddings",
+                "{{weddingId}}",
+                "events"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "50",
+                  "disabled": true
+                },
+                {
+                  "key": "sortBy",
+                  "value": "eventDate",
+                  "disabled": true
+                },
+                {
+                  "key": "sortOrder",
+                  "value": "asc",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Event Detail",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/weddings/{{weddingId}}/events/{{eventId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "weddings",
+                "{{weddingId}}",
+                "events",
+                "{{eventId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Event",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/weddings/{{weddingId}}/events",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "weddings",
+                "{{weddingId}}",
+                "events"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Mehndi\",\n  \"eventDate\": \"2026-11-27\",\n  \"startTime\": \"18:00\",\n  \"venueName\": \"Pearl Hall\",\n  \"venueAddress\": \"123 Main Blvd, Lahore\",\n  \"notes\": \"Green theme\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Roles: OWNER, CO_OWNER, FAMILY_MEMBER."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let jsonData = {};",
+                  "try { jsonData = pm.response.json(); } catch (e) { /* non-JSON response, skip */ }",
+                  "if (jsonData.data && jsonData.data.id) {",
+                  "    pm.collectionVariables.set('eventId', jsonData.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Event",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/weddings/{{weddingId}}/events/{{eventId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "weddings",
+                "{{weddingId}}",
+                "events",
+                "{{eventId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"manualStatus\": \"POSTPONED\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Roles: OWNER, CO_OWNER. Omit manualStatus to let status auto-derive from eventDate."
+          }
+        },
+        {
+          "name": "Delete Event",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/weddings/{{weddingId}}/events/{{eventId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "weddings",
+                "{{weddingId}}",
+                "events",
+                "{{eventId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. Tasks",
+      "item": [
+        {
+          "name": "List Tasks",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/weddings/{{weddingId}}/tasks?page=1&limit=20&sortBy=createdAt&sortOrder=desc&status=PENDING&priority=HIGH&assignedTo={{memberUserId}}&eventId={{eventId}}&search=salon",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "weddings",
+                "{{weddingId}}",
+                "tasks"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": true
+                },
+                {
+                  "key": "sortBy",
+                  "value": "createdAt",
+                  "disabled": true
+                },
+                {
+                  "key": "sortOrder",
+                  "value": "desc",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "PENDING",
+                  "disabled": true
+                },
+                {
+                  "key": "priority",
+                  "value": "HIGH",
+                  "disabled": true
+                },
+                {
+                  "key": "assignedTo",
+                  "value": "{{memberUserId}}",
+                  "disabled": true
+                },
+                {
+                  "key": "eventId",
+                  "value": "{{eventId}}",
+                  "disabled": true
+                },
+                {
+                  "key": "search",
+                  "value": "salon",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Task",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/weddings/{{weddingId}}/tasks",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "weddings",
+                "{{weddingId}}",
+                "tasks"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Confirm salon booking\",\n  \"description\": \"Call salon to confirm 8am slot\",\n  \"dueDate\": \"2026-11-20\",\n  \"priority\": \"HIGH\",\n  \"eventId\": \"{{eventId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Roles: OWNER, CO_OWNER, FAMILY_MEMBER. assignedTo is optional (must be an existing wedding member userId)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let jsonData = {};",
+                  "try { jsonData = pm.response.json(); } catch (e) { /* non-JSON response, skip */ }",
+                  "if (jsonData.data && jsonData.data.id) {",
+                  "    pm.collectionVariables.set('taskId', jsonData.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Task",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/weddings/{{weddingId}}/tasks/{{taskId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "weddings",
+                "{{weddingId}}",
+                "tasks",
+                "{{taskId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"IN_PROGRESS\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete Task",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/weddings/{{weddingId}}/tasks/{{taskId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "weddings",
+                "{{weddingId}}",
+                "tasks",
+                "{{taskId}}"
+              ]
+            },
+            "description": "Roles: OWNER, CO_OWNER only."
+          }
+        }
+      ]
+    }
+  ]
+}
