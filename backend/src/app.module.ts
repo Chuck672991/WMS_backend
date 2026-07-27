@@ -7,9 +7,11 @@ import databaseConfig from './config/database.config';
 import redisConfig from './config/redis.config';
 import jwtConfig from './config/jwt.config';
 import s3Config from './config/s3.config';
+import { CacheModule } from './cache/cache.module';
 import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { BudgetModule } from './modules/budget/budget.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { EventsModule } from './modules/events/events.module';
 import { GuestsModule } from './modules/guests/guests.module';
 import { TasksModule } from './modules/tasks/tasks.module';
@@ -30,6 +32,7 @@ import { WeddingsModule } from './modules/weddings/weddings.module';
       },
     ]),
     DatabaseModule,
+    CacheModule,
     AuthModule,
     UsersModule,
     WeddingsModule,
@@ -38,7 +41,8 @@ import { WeddingsModule } from './modules/weddings/weddings.module';
     BudgetModule,
     EventsModule,
     TasksModule,
-    // Further feature modules (Module 08 onward) are registered here as they're built.
+    DashboardModule,
+    // Further feature modules (Module 09 onward) are registered here as they're built.
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

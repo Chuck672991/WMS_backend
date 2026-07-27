@@ -7,6 +7,7 @@ import {
 import { GatheringType, GuestSide, RsvpStatus } from '@prisma/client';
 import { parse } from 'csv-parse/sync';
 import * as XLSX from 'xlsx';
+import { CacheInvalidationService } from '../../cache/cache-invalidation.service';
 import { ErrorCode } from '../../common/constants/error-codes.constant';
 import { PaginationMeta } from '../../common/types/pagination.types';
 import { CreateGuestDto } from './dto/create-guest.dto';
@@ -40,7 +41,10 @@ function cellToString(value: unknown): string {
 
 @Injectable()
 export class GuestsService {
-  constructor(private readonly repository: GuestsRepository) {}
+  constructor(
+    private readonly repository: GuestsRepository,
+    private readonly cacheInvalidation: CacheInvalidationService,
+  ) {}
 
   // --- 5.1 List guests --------------------------------------------------
 
@@ -110,9 +114,10 @@ export class GuestsService {
   // --- 5.3 Create guest -----------------------------------------------
 
   async createGuest(weddingId: string, createdBy: string, dto: CreateGuestDto) {
-    // NOTE: eventIds existence/same-wedding validation deferred to Module 07
-    // (Event model doesn't exist yet) — accepted and stored as-is for now.
-    return this.repository.createGuestWithEventInvites(
+    if (dto.eventIds?.length) {
+      await this.assertEventsBelongToWedding(weddingId, dto.eventIds);
+    }
+    const guest = await this.repository.createGuestWithEventInvites(
       weddingId,
       createdBy,
       {
@@ -125,6 +130,8 @@ export class GuestsService {
       },
       dto.eventIds,
     );
+    await this.cacheInvalidation.invalidateDashboard(weddingId);
+    return guest;
   }
 
   // --- 5.4 Bulk import guests (CSV/XLSX) --------------------------------
@@ -180,6 +187,7 @@ export class GuestsService {
       createdBy,
       validRows,
     );
+    await this.cacheInvalidation.invalidateDashboard(weddingId);
 
     return { importedCount, failedCount: failures.length, failures };
   }
@@ -188,7 +196,10 @@ export class GuestsService {
 
   async updateGuest(weddingId: string, guestId: string, dto: UpdateGuestDto) {
     await this.findGuestOrThrow(weddingId, guestId);
-    return this.repository.updateGuestWithEventInvites(
+    if (dto.eventIds?.length) {
+      await this.assertEventsBelongToWedding(weddingId, dto.eventIds);
+    }
+    const guest = await this.repository.updateGuestWithEventInvites(
       guestId,
       {
         name: dto.name,
@@ -200,6 +211,8 @@ export class GuestsService {
       },
       dto.eventIds,
     );
+    await this.cacheInvalidation.invalidateDashboard(weddingId);
+    return guest;
   }
 
   // --- 5.6 Manually set RSVP status -------------------------------------
@@ -210,7 +223,9 @@ export class GuestsService {
     rsvpStatus: RsvpStatus,
   ) {
     await this.findGuestOrThrow(weddingId, guestId);
-    return this.repository.setRsvpStatus(guestId, rsvpStatus);
+    const guest = await this.repository.setRsvpStatus(guestId, rsvpStatus);
+    await this.cacheInvalidation.invalidateDashboard(weddingId);
+    return guest;
   }
 
   // --- 5.7 Delete guest -------------------------------------------------
@@ -218,6 +233,7 @@ export class GuestsService {
   async deleteGuest(weddingId: string, guestId: string): Promise<void> {
     await this.findGuestOrThrow(weddingId, guestId);
     await this.repository.softDeleteGuest(guestId);
+    await this.cacheInvalidation.invalidateDashboard(weddingId);
   }
 
   // --- 5.8 Send digital invite ------------------------------------------
@@ -241,6 +257,7 @@ export class GuestsService {
     }
 
     await this.repository.updateLastInvitedAt(guestId);
+    await this.cacheInvalidation.invalidateDashboard(weddingId);
     // TODO (Module 11): enqueue the `guest-invites` BullMQ job to actually
     // dispatch SMS/WhatsApp/email. Logged here as a scaffold placeholder.
     const rsvpLink = `https://app.smartwedding.app/rsvp/${guest.rsvpToken}`;
@@ -266,6 +283,9 @@ export class GuestsService {
       console.log(
         `[GuestsService] Queued ${channel ?? 'WHATSAPP'} invite for guest ${guest.id}: ${rsvpLink}`,
       );
+    }
+    if (guests.length > 0) {
+      await this.cacheInvalidation.invalidateDashboard(weddingId);
     }
   }
 
@@ -313,6 +333,7 @@ export class GuestsService {
       dto.response,
       dto.attendingCount,
     );
+    await this.cacheInvalidation.invalidateDashboard(guest.weddingId);
     // TODO (Module 09): trigger an in-app RSVP_RECEIVED notification to
     // wedding owners/co-owners.
   }
@@ -328,6 +349,22 @@ export class GuestsService {
       });
     }
     return guest;
+  }
+
+  private async assertEventsBelongToWedding(
+    weddingId: string,
+    eventIds: string[],
+  ): Promise<void> {
+    const allBelong = await this.repository.eventsBelongToWedding(
+      weddingId,
+      eventIds,
+    );
+    if (!allBelong) {
+      throw new NotFoundException({
+        code: ErrorCode.NOT_FOUND,
+        message: 'One or more eventIds do not belong to this wedding.',
+      });
+    }
   }
 
   private parseImportFile(

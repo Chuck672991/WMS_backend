@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { WeddingRole } from '@prisma/client';
+import { CacheInvalidationService } from '../../cache/cache-invalidation.service';
 import { ErrorCode } from '../../common/constants/error-codes.constant';
 import type { CurrentUserPayload } from '../../common/decorators/current-user.decorator';
 import { PaginationMeta } from '../../common/types/pagination.types';
@@ -15,7 +16,10 @@ import { TasksRepository } from './tasks.repository';
 
 @Injectable()
 export class TasksService {
-  constructor(private readonly repository: TasksRepository) {}
+  constructor(
+    private readonly repository: TasksRepository,
+    private readonly cacheInvalidation: CacheInvalidationService,
+  ) {}
 
   // --- 7.6 List tasks ------------------------------------------------------
 
@@ -94,7 +98,7 @@ export class TasksService {
       }
     }
 
-    return this.repository.createTask(weddingId, createdBy, {
+    const task = await this.repository.createTask(weddingId, createdBy, {
       title: dto.title,
       description: dto.description,
       assignedTo: dto.assignedTo,
@@ -102,6 +106,8 @@ export class TasksService {
       priority: dto.priority,
       eventId: dto.eventId,
     });
+    await this.cacheInvalidation.invalidateDashboard(weddingId);
+    return task;
   }
 
   // --- 7.8 Update task -------------------------------------------------
@@ -137,7 +143,11 @@ export class TasksService {
         });
       }
 
-      return this.repository.updateTask(taskId, { status: dto.status });
+      const updated = await this.repository.updateTask(taskId, {
+        status: dto.status,
+      });
+      await this.cacheInvalidation.invalidateDashboard(weddingId);
+      return updated;
     }
 
     if (dto.assignedTo) {
@@ -165,10 +175,12 @@ export class TasksService {
       }
     }
 
-    return this.repository.updateTask(taskId, {
+    const updated = await this.repository.updateTask(taskId, {
       ...dto,
       dueDate: dto.dueDate ? new Date(dto.dueDate) : undefined,
     });
+    await this.cacheInvalidation.invalidateDashboard(weddingId);
+    return updated;
   }
 
   // --- 7.9 Delete task -------------------------------------------------
@@ -176,6 +188,7 @@ export class TasksService {
   async deleteTask(weddingId: string, taskId: string): Promise<void> {
     await this.findTaskOrThrow(weddingId, taskId);
     await this.repository.softDeleteTask(taskId);
+    await this.cacheInvalidation.invalidateDashboard(weddingId);
   }
 
   // --- Shared helpers ------------------------------------------------------

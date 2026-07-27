@@ -34,6 +34,16 @@ type Tx = Prisma.TransactionClient;
 export class VendorsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  async eventBelongsToWedding(
+    weddingId: string,
+    eventId: string,
+  ): Promise<boolean> {
+    const count = await this.prisma.event.count({
+      where: { id: eventId, weddingId, deletedAt: null },
+    });
+    return count > 0;
+  }
+
   /** Exposes the underlying client so services can orchestrate a
    * transaction that spans this repository and another module's (e.g.
    * BudgetRepository) in a single atomic unit. */

@@ -23,6 +23,17 @@ export interface GuestListFilters {
 export class GuestsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  async eventsBelongToWedding(
+    weddingId: string,
+    eventIds: string[],
+  ): Promise<boolean> {
+    if (eventIds.length === 0) return true;
+    const count = await this.prisma.event.count({
+      where: { id: { in: eventIds }, weddingId, deletedAt: null },
+    });
+    return count === eventIds.length;
+  }
+
   private buildListWhere(
     weddingId: string,
     filters: GuestListFilters,

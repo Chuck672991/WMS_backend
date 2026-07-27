@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Event } from '@prisma/client';
+import { CacheInvalidationService } from '../../cache/cache-invalidation.service';
 import { ErrorCode } from '../../common/constants/error-codes.constant';
 import { PaginationMeta } from '../../common/types/pagination.types';
 import { CreateEventDto } from './dto/create-event.dto';
@@ -18,7 +19,10 @@ function computeStatus(event: Event, isNext: boolean): ComputedStatus {
 
 @Injectable()
 export class EventsService {
-  constructor(private readonly repository: EventsRepository) {}
+  constructor(
+    private readonly repository: EventsRepository,
+    private readonly cacheInvalidation: CacheInvalidationService,
+  ) {}
 
   // --- 7.1 List events (timeline view) --------------------------------------
 
@@ -82,7 +86,7 @@ export class EventsService {
   // --- 7.3 Create event -----------------------------------------------------
 
   async createEvent(weddingId: string, createdBy: string, dto: CreateEventDto) {
-    return this.repository.createEvent(weddingId, createdBy, {
+    const event = await this.repository.createEvent(weddingId, createdBy, {
       name: dto.name,
       eventDate: new Date(dto.eventDate),
       startTime: dto.startTime,
@@ -90,16 +94,20 @@ export class EventsService {
       venueAddress: dto.venueAddress,
       notes: dto.notes,
     });
+    await this.cacheInvalidation.invalidateDashboard(weddingId);
+    return event;
   }
 
   // --- 7.4 Update event -------------------------------------------------
 
   async updateEvent(weddingId: string, eventId: string, dto: UpdateEventDto) {
     await this.findEventOrThrow(weddingId, eventId);
-    return this.repository.updateEvent(eventId, {
+    const event = await this.repository.updateEvent(eventId, {
       ...dto,
       eventDate: dto.eventDate ? new Date(dto.eventDate) : undefined,
     });
+    await this.cacheInvalidation.invalidateDashboard(weddingId);
+    return event;
   }
 
   // --- 7.5 Delete event -------------------------------------------------
@@ -107,6 +115,7 @@ export class EventsService {
   async deleteEvent(weddingId: string, eventId: string): Promise<void> {
     await this.findEventOrThrow(weddingId, eventId);
     await this.repository.softDeleteEventWithCascade(eventId);
+    await this.cacheInvalidation.invalidateDashboard(weddingId);
   }
 
   // --- Shared helpers ------------------------------------------------------

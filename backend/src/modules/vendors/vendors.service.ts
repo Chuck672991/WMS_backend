@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { VendorCategory } from '@prisma/client';
+import { CacheInvalidationService } from '../../cache/cache-invalidation.service';
 import { ErrorCode } from '../../common/constants/error-codes.constant';
 import { PaginationMeta } from '../../common/types/pagination.types';
 import { BudgetService } from '../budget/budget.service';
@@ -38,6 +39,7 @@ export class VendorsService {
   constructor(
     private readonly repository: VendorsRepository,
     private readonly budgetService: BudgetService,
+    private readonly cacheInvalidation: CacheInvalidationService,
   ) {}
 
   // --- 4.1 List vendors -----------------------------------------------------
@@ -136,9 +138,16 @@ export class VendorsService {
     createdBy: string,
     dto: CreateVendorDto,
   ) {
-    // NOTE: eventId existence/same-wedding validation is deferred to Module 07
-    // (Event model doesn't exist yet) — accepted and stored as-is for now.
-    return this.repository.createVendor(weddingId, createdBy, dto);
+    if (dto.eventId) {
+      await this.assertEventBelongsToWedding(weddingId, dto.eventId);
+    }
+    const vendor = await this.repository.createVendor(
+      weddingId,
+      createdBy,
+      dto,
+    );
+    await this.cacheInvalidation.invalidateDashboard(weddingId);
+    return vendor;
   }
 
   // --- 4.4 Update vendor ---------------------------------------------------
@@ -149,7 +158,12 @@ export class VendorsService {
     dto: UpdateVendorDto,
   ) {
     await this.findVendorOrThrow(weddingId, vendorId);
-    return this.repository.updateVendor(vendorId, dto);
+    if (dto.eventId) {
+      await this.assertEventBelongsToWedding(weddingId, dto.eventId);
+    }
+    const vendor = await this.repository.updateVendor(vendorId, dto);
+    await this.cacheInvalidation.invalidateDashboard(weddingId);
+    return vendor;
   }
 
   // --- 4.5 Delete vendor ----------------------------------------------------
@@ -157,6 +171,7 @@ export class VendorsService {
   async deleteVendor(weddingId: string, vendorId: string): Promise<void> {
     await this.findVendorOrThrow(weddingId, vendorId);
     await this.repository.softDeleteVendor(vendorId);
+    await this.cacheInvalidation.invalidateDashboard(weddingId);
   }
 
   // --- 4.6 Record payment ---------------------------------------------------
@@ -219,6 +234,8 @@ export class VendorsService {
         ? `Total paid (${totalPaid}) exceeds the agreed price (${totalPrice}).`
         : null;
 
+    await this.cacheInvalidation.invalidateDashboard(weddingId);
+
     return {
       data: {
         id: payment.id,
@@ -258,6 +275,7 @@ export class VendorsService {
       await this.repository.deletePayment(paymentId, tx);
       await this.budgetService.deleteByVendorPaymentId(paymentId, tx);
     });
+    await this.cacheInvalidation.invalidateDashboard(weddingId);
   }
 
   // --- 4.8 List vendor categories (static reference) ------------------------
@@ -280,5 +298,21 @@ export class VendorsService {
       });
     }
     return vendor;
+  }
+
+  private async assertEventBelongsToWedding(
+    weddingId: string,
+    eventId: string,
+  ): Promise<void> {
+    const belongs = await this.repository.eventBelongsToWedding(
+      weddingId,
+      eventId,
+    );
+    if (!belongs) {
+      throw new NotFoundException({
+        code: ErrorCode.NOT_FOUND,
+        message: 'eventId does not belong to this wedding.',
+      });
+    }
   }
 }

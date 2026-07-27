@@ -9,6 +9,7 @@ import {
   Prisma,
   VendorCategory,
 } from '@prisma/client';
+import { CacheInvalidationService } from '../../cache/cache-invalidation.service';
 import { ErrorCode } from '../../common/constants/error-codes.constant';
 import { PaginationMeta } from '../../common/types/pagination.types';
 import { BudgetRepository } from './budget.repository';
@@ -68,7 +69,10 @@ interface VendorPaymentSyncParams {
 
 @Injectable()
 export class BudgetService {
-  constructor(private readonly repository: BudgetRepository) {}
+  constructor(
+    private readonly repository: BudgetRepository,
+    private readonly cacheInvalidation: CacheInvalidationService,
+  ) {}
 
   // --- 6.1 Get budget summary -----------------------------------------------
 
@@ -135,7 +139,9 @@ export class BudgetService {
     recordedBy: string,
     dto: CreateBudgetItemDto,
   ) {
-    return this.repository.createItem(weddingId, recordedBy, dto);
+    const item = await this.repository.createItem(weddingId, recordedBy, dto);
+    await this.cacheInvalidation.invalidateDashboard(weddingId);
+    return item;
   }
 
   // --- 6.5 Update budget item -------------------------------------------
@@ -155,7 +161,9 @@ export class BudgetService {
       });
     }
 
-    return this.repository.updateItem(itemId, dto);
+    const updated = await this.repository.updateItem(itemId, dto);
+    await this.cacheInvalidation.invalidateDashboard(weddingId);
+    return updated;
   }
 
   // --- 6.6 Delete budget item -------------------------------------------
@@ -172,6 +180,7 @@ export class BudgetService {
     }
 
     await this.repository.softDeleteItem(itemId);
+    await this.cacheInvalidation.invalidateDashboard(weddingId);
   }
 
   // --- 6.7 List budget categories (static reference) ------------------------
