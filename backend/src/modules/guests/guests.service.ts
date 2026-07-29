@@ -130,7 +130,7 @@ export class GuestsService {
       },
       dto.eventIds,
     );
-    await this.cacheInvalidation.invalidateDashboard(weddingId);
+    void this.cacheInvalidation.invalidateDashboard(weddingId);
     return guest;
   }
 
@@ -187,7 +187,7 @@ export class GuestsService {
       createdBy,
       validRows,
     );
-    await this.cacheInvalidation.invalidateDashboard(weddingId);
+    void this.cacheInvalidation.invalidateDashboard(weddingId);
 
     return { importedCount, failedCount: failures.length, failures };
   }
@@ -211,7 +211,7 @@ export class GuestsService {
       },
       dto.eventIds,
     );
-    await this.cacheInvalidation.invalidateDashboard(weddingId);
+    void this.cacheInvalidation.invalidateDashboard(weddingId);
     return guest;
   }
 
@@ -224,7 +224,7 @@ export class GuestsService {
   ) {
     await this.findGuestOrThrow(weddingId, guestId);
     const guest = await this.repository.setRsvpStatus(guestId, rsvpStatus);
-    await this.cacheInvalidation.invalidateDashboard(weddingId);
+    void this.cacheInvalidation.invalidateDashboard(weddingId);
     return guest;
   }
 
@@ -233,7 +233,7 @@ export class GuestsService {
   async deleteGuest(weddingId: string, guestId: string): Promise<void> {
     await this.findGuestOrThrow(weddingId, guestId);
     await this.repository.softDeleteGuest(guestId);
-    await this.cacheInvalidation.invalidateDashboard(weddingId);
+    void this.cacheInvalidation.invalidateDashboard(weddingId);
   }
 
   // --- 5.8 Send digital invite ------------------------------------------
@@ -257,7 +257,7 @@ export class GuestsService {
     }
 
     await this.repository.updateLastInvitedAt(guestId);
-    await this.cacheInvalidation.invalidateDashboard(weddingId);
+    void this.cacheInvalidation.invalidateDashboard(weddingId);
     // TODO (Module 11): enqueue the `guest-invites` BullMQ job to actually
     // dispatch SMS/WhatsApp/email. Logged here as a scaffold placeholder.
     const rsvpLink = `https://app.smartwedding.app/rsvp/${guest.rsvpToken}`;
@@ -285,7 +285,7 @@ export class GuestsService {
       );
     }
     if (guests.length > 0) {
-      await this.cacheInvalidation.invalidateDashboard(weddingId);
+      void this.cacheInvalidation.invalidateDashboard(weddingId);
     }
   }
 
@@ -333,7 +333,7 @@ export class GuestsService {
       dto.response,
       dto.attendingCount,
     );
-    await this.cacheInvalidation.invalidateDashboard(guest.weddingId);
+    void this.cacheInvalidation.invalidateDashboard(guest.weddingId);
     // TODO (Module 09): trigger an in-app RSVP_RECEIVED notification to
     // wedding owners/co-owners.
   }

@@ -140,7 +140,7 @@ export class BudgetService {
     dto: CreateBudgetItemDto,
   ) {
     const item = await this.repository.createItem(weddingId, recordedBy, dto);
-    await this.cacheInvalidation.invalidateDashboard(weddingId);
+    void this.cacheInvalidation.invalidateDashboard(weddingId);
     return item;
   }
 
@@ -162,7 +162,7 @@ export class BudgetService {
     }
 
     const updated = await this.repository.updateItem(itemId, dto);
-    await this.cacheInvalidation.invalidateDashboard(weddingId);
+    void this.cacheInvalidation.invalidateDashboard(weddingId);
     return updated;
   }
 
@@ -180,7 +180,7 @@ export class BudgetService {
     }
 
     await this.repository.softDeleteItem(itemId);
-    await this.cacheInvalidation.invalidateDashboard(weddingId);
+    void this.cacheInvalidation.invalidateDashboard(weddingId);
   }
 
   // --- 6.7 List budget categories (static reference) ------------------------

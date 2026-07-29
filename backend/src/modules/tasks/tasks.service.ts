@@ -106,7 +106,7 @@ export class TasksService {
       priority: dto.priority,
       eventId: dto.eventId,
     });
-    await this.cacheInvalidation.invalidateDashboard(weddingId);
+    void this.cacheInvalidation.invalidateDashboard(weddingId);
     return task;
   }
 
@@ -146,7 +146,7 @@ export class TasksService {
       const updated = await this.repository.updateTask(taskId, {
         status: dto.status,
       });
-      await this.cacheInvalidation.invalidateDashboard(weddingId);
+      void this.cacheInvalidation.invalidateDashboard(weddingId);
       return updated;
     }
 
@@ -179,7 +179,7 @@ export class TasksService {
       ...dto,
       dueDate: dto.dueDate ? new Date(dto.dueDate) : undefined,
     });
-    await this.cacheInvalidation.invalidateDashboard(weddingId);
+    void this.cacheInvalidation.invalidateDashboard(weddingId);
     return updated;
   }
 
@@ -188,7 +188,7 @@ export class TasksService {
   async deleteTask(weddingId: string, taskId: string): Promise<void> {
     await this.findTaskOrThrow(weddingId, taskId);
     await this.repository.softDeleteTask(taskId);
-    await this.cacheInvalidation.invalidateDashboard(weddingId);
+    void this.cacheInvalidation.invalidateDashboard(weddingId);
   }
 
   // --- Shared helpers ------------------------------------------------------

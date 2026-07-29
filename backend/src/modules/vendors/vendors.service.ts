@@ -146,7 +146,7 @@ export class VendorsService {
       createdBy,
       dto,
     );
-    await this.cacheInvalidation.invalidateDashboard(weddingId);
+    void this.cacheInvalidation.invalidateDashboard(weddingId);
     return vendor;
   }
 
@@ -162,7 +162,7 @@ export class VendorsService {
       await this.assertEventBelongsToWedding(weddingId, dto.eventId);
     }
     const vendor = await this.repository.updateVendor(vendorId, dto);
-    await this.cacheInvalidation.invalidateDashboard(weddingId);
+    void this.cacheInvalidation.invalidateDashboard(weddingId);
     return vendor;
   }
 
@@ -171,7 +171,7 @@ export class VendorsService {
   async deleteVendor(weddingId: string, vendorId: string): Promise<void> {
     await this.findVendorOrThrow(weddingId, vendorId);
     await this.repository.softDeleteVendor(vendorId);
-    await this.cacheInvalidation.invalidateDashboard(weddingId);
+    void this.cacheInvalidation.invalidateDashboard(weddingId);
   }
 
   // --- 4.6 Record payment ---------------------------------------------------
@@ -234,7 +234,7 @@ export class VendorsService {
         ? `Total paid (${totalPaid}) exceeds the agreed price (${totalPrice}).`
         : null;
 
-    await this.cacheInvalidation.invalidateDashboard(weddingId);
+    void this.cacheInvalidation.invalidateDashboard(weddingId);
 
     return {
       data: {
@@ -275,7 +275,7 @@ export class VendorsService {
       await this.repository.deletePayment(paymentId, tx);
       await this.budgetService.deleteByVendorPaymentId(paymentId, tx);
     });
-    await this.cacheInvalidation.invalidateDashboard(weddingId);
+    void this.cacheInvalidation.invalidateDashboard(weddingId);
   }
 
   // --- 4.8 List vendor categories (static reference) ------------------------

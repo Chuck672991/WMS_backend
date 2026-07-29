@@ -94,7 +94,7 @@ export class EventsService {
       venueAddress: dto.venueAddress,
       notes: dto.notes,
     });
-    await this.cacheInvalidation.invalidateDashboard(weddingId);
+    void this.cacheInvalidation.invalidateDashboard(weddingId);
     return event;
   }
 
@@ -106,7 +106,7 @@ export class EventsService {
       ...dto,
       eventDate: dto.eventDate ? new Date(dto.eventDate) : undefined,
     });
-    await this.cacheInvalidation.invalidateDashboard(weddingId);
+    void this.cacheInvalidation.invalidateDashboard(weddingId);
     return event;
   }
 
@@ -115,7 +115,7 @@ export class EventsService {
   async deleteEvent(weddingId: string, eventId: string): Promise<void> {
     await this.findEventOrThrow(weddingId, eventId);
     await this.repository.softDeleteEventWithCascade(eventId);
-    await this.cacheInvalidation.invalidateDashboard(weddingId);
+    void this.cacheInvalidation.invalidateDashboard(weddingId);
   }
 
   // --- Shared helpers ------------------------------------------------------

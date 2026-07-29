@@ -33,6 +33,18 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
         lazyConnect: false,
         maxRetriesPerRequest: 1,
         retryStrategy: (times) => Math.min(times * 200, 2000),
+        // ioredis defaults to a 10s connect timeout and no command timeout —
+        // without these, a slow/unreachable Redis stalls every caller (every
+        // write in the app goes through invalidateDashboard()) for up to 10s
+        // before our try/catch below even gets a chance to swallow the error.
+        connectTimeout: 3000,
+        commandTimeout: 2000,
+        // Without this, a command issued while disconnected sits in ioredis's
+        // offline queue waiting through a full reconnect cycle (retryStrategy
+        // backoff + connectTimeout) before failing — that's what stacked up
+        // to 5s+ per call. This makes it reject immediately instead, so our
+        // try/catch below falls back to "cache miss" / "skip cache" at once.
+        enableOfflineQueue: false,
       },
     );
     this.client.on('error', (error) =>
