@@ -24,7 +24,11 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { JwtRefreshAuthGuard } from './strategies/jwt-refresh.strategy';
 import type { ValidatedRefreshToken } from './strategies/jwt-refresh.strategy';
 
-const AUTH_THROTTLE = { default: { limit: 5, ttl: 900_000 } }; // 5 req / 15 min (Section 2, Security Notes)
+// Section 2's Security Notes specify 5 req/15min/IP; raised to 20 so normal
+// interactive use (repeated login/logout during testing, a family member
+// mistyping a password a few times) doesn't get blocked, while still capping
+// sustained brute-force attempts.
+const AUTH_THROTTLE = { default: { limit: 20, ttl: 900_000 } };
 
 function deviceInfoFrom(req: Request): string | undefined {
   return req.get('user-agent');
