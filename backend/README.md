@@ -70,6 +70,73 @@ $ mau deploy
 
 With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
 
+## DevOps
+
+### Docker
+
+```bash
+# Build image (run from the backend/ directory — it's the Docker build context)
+docker build -t writing-management-backend .
+
+# Run container
+docker run -p 3000:3000 \
+  -e DATABASE_URL=your_neon_url \
+  -e REDIS_URL=your_upstash_url \
+  -e JWT_ACCESS_SECRET=your_secret \
+  -e JWT_REFRESH_SECRET=your_secret \
+  writing-management-backend
+```
+
+The image is a multi-stage build (`node:20-alpine`): a `builder` stage installs
+dependencies, generates the Prisma client, and compiles TypeScript; a `runtime`
+stage installs only production dependencies, copies in the compiled `dist/`
+and the generated Prisma client, and runs as a non-root user (`nestuser`).
+
+### Environment variables
+
+| Variable | Description |
+| --- | --- |
+| `NODE_ENV` | `development` \| `production` |
+| `PORT` | Port the HTTP server listens on (default `3000`) |
+| `API_PREFIX` | Global route prefix (default `v1`); `/health` is excluded from it |
+| `DATABASE_URL` | PostgreSQL connection string (Neon) |
+| `REDIS_URL` | Redis connection string (Upstash) |
+| `JWT_ACCESS_SECRET` / `JWT_ACCESS_EXPIRY` | Access token signing secret / expiry |
+| `JWT_REFRESH_SECRET` / `JWT_REFRESH_EXPIRY` | Refresh token signing secret / expiry |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google OAuth credentials |
+| `S3_BUCKET_NAME` / `S3_REGION` / `S3_ACCESS_KEY_ID` / `S3_SECRET_ACCESS_KEY` / `CDN_BASE_URL` | File storage |
+| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASSWORD` / `SMTP_FROM` | Outbound email |
+| `WHATSAPP_API_KEY` / `SMS_API_KEY` | Guest invite channels |
+| `FCM_SERVER_KEY` | Push notifications |
+| `THROTTLE_TTL` / `THROTTLE_LIMIT` | Rate limiting window (seconds) / request limit |
+
+See [`.env.example`](.env.example) for the full, up-to-date list.
+
+### CI/CD pipeline
+
+Defined in [`.github/workflows/ci.yml`](../.github/workflows/ci.yml), triggered on pushes and pull requests to `main`:
+
+- **lint** — `npm run lint`
+- **test** — `npm run test`, using `DATABASE_URL`/`REDIS_URL` from GitHub Secrets
+- **build** — runs after `lint` and `test` pass; `npm run build`, uploads `dist/` as a build artifact (7-day retention)
+- **deploy** — runs after `build`, only on a push to `main` (not on PRs); calls the Render deploy hook via `curl`
+
+Concurrent runs on the same branch cancel the older one in favor of the latest push.
+
+### Health check
+
+```bash
+curl http://localhost:3000/health
+```
+
+Backed by `@nestjs/terminus`, checking PostgreSQL (via Prisma) and Redis connectivity. Returns HTTP 200 when both are up, HTTP 503 if either is down.
+
+### GitHub Secrets required
+
+- `DATABASE_URL`
+- `REDIS_URL`
+- `RENDER_DEPLOY_HOOK_URL`
+
 ## Resources
 
 Check out a few resources that may come in handy when working with NestJS:

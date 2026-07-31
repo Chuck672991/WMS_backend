@@ -19,7 +19,9 @@ export async function createApp(): Promise<NestExpressApplication> {
   const config = app.get(ConfigService);
 
   const apiPrefix = config.get<string>('app.apiPrefix') ?? 'v1';
-  app.setGlobalPrefix(apiPrefix);
+  // Excluded so uptime checks / Docker's HEALTHCHECK / Render's health
+  // check can hit GET /health directly instead of /{apiPrefix}/health.
+  app.setGlobalPrefix(apiPrefix, { exclude: ['health'] });
 
   const corsOrigin = process.env.CORS_ORIGIN;
   app.enableCors({

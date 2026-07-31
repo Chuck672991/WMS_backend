@@ -9,6 +9,7 @@ import jwtConfig from './config/jwt.config';
 import s3Config from './config/s3.config';
 import { CacheModule } from './cache/cache.module';
 import { DatabaseModule } from './database/database.module';
+import { HealthModule } from './health/health.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { BudgetModule } from './modules/budget/budget.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
@@ -33,6 +34,7 @@ import { WeddingsModule } from './modules/weddings/weddings.module';
     ]),
     DatabaseModule,
     CacheModule,
+    HealthModule,
     AuthModule,
     UsersModule,
     WeddingsModule,

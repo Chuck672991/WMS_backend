@@ -89,4 +89,13 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       );
     }
   }
+
+  /**
+   * Unlike get/set/del, this intentionally rethrows on failure — it backs
+   * the /health endpoint, which needs to observe a real Redis outage rather
+   * than have it swallowed into a silent "cache disabled" state.
+   */
+  async ping(): Promise<void> {
+    await this.client.ping();
+  }
 }
