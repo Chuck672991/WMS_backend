@@ -39,7 +39,9 @@ jobs:
           cache: npm
           cache-dependency-path: backend/package-lock.json
       - run: npm ci
-      - run: npm run test
+      # --passWithNoTests: this repo has no *.spec.ts files yet, so a normal
+      # `jest` run exits 1 with "No tests found" — remove the flag once tests exist.
+      - run: npm run test -- --passWithNoTests
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           REDIS_URL: ${{ secrets.REDIS_URL }}
