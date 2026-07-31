@@ -70,6 +70,12 @@ jobs:
     needs: [build]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    # No checkout in this job — it only pings a webhook, so override the
+    # workflow-level `backend` working-directory back to the runner root
+    # (that directory otherwise doesn't exist without a checkout step).
+    defaults:
+      run:
+        working-directory: .
     steps:
       - name: Trigger Render deploy hook
         run: curl -fsS -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
