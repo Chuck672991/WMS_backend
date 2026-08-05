@@ -1,4 +1,4 @@
-# Smart Wedding Management API
+# (EK) Smart Wedding Management API
 
 A multi-tenant **Wedding Management Platform** backend — one couple's wedding is a workspace shared by an owner, co-owners, family members, and viewers, covering vendors, guests & RSVPs, budget, timeline events, and tasks, with a live dashboard summarizing progress across all of them.
 
